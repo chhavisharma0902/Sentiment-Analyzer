@@ -1,56 +1,88 @@
-💬 Real-Time Sentiment Analyzer with Automated Daily Reports
-🧠 Overview
-This project is a real-time sentiment analysis system that simulates social media activity using the Faker library. It processes live data streams, performs NLP-based sentiment analysis, extracts trending topics, stores results in MongoDB, and generates automated daily reports using Apache Airflow.
+# 🌤️ Real-Time Sentiment Analyzer
 
-It’s a complete end-to-end pipeline built for educational and research purposes — demonstrating how real-world sentiment monitoring systems work.
+A real-time sentiment analysis system that uses **Faker-generated social media posts** to simulate live data streams.  
+The project integrates **Kafka**, **BERT-based NLP**, **MongoDB**, **Streamlit**, and **Airflow** to provide insights, analytics, and automated daily reports.
 
-🧱 System Architecture
-Faker Post Generator → Kafka Producer → Kafka Consumer (BERT + Topic Extraction)
-                                           ↓
-                                        MongoDB
-                                           ↓
-                             Streamlit Dashboard (Live View)
-                                           ↓
-                             Airflow DAG (Daily Reports)
+---
 
-🛠️ Tech Stack
+## 🚀 Features
 
-Language: Python
+- 🔄 **Real-time data generation** using the Faker library  
+- 🧠 **Transformer-based sentiment analysis** (BERT model for Twitter data)  
+- 📦 **Data pipeline with Kafka** for streaming  
+- 🗃️ **MongoDB** for storing processed posts and daily summaries  
+- 📊 **Streamlit Dashboard** for live visualization of sentiment trends  
+- 🕒 **Airflow DAGs** for automated daily trend reports  
 
-Data Generator: Faker
+---
 
-Stream Processing: Apache Kafka
+## 🧩 Tech Stack
 
-Database: MongoDB
+| Component | Technology |
+|------------|-------------|
+| Data Source | Faker Library |
+| Stream Processing | Apache Kafka |
+| NLP Model | BERT (Twitter RoBERTa) |
+| Database | MongoDB |
+| Visualization | Streamlit |
+| Scheduler | Apache Airflow |
+| Language | Python 3 |
 
-Sentiment Model: BERT (cardiffnlp/twitter-roberta-base-sentiment)
+---
 
-Dashboard: Streamlit
+## ⚙️ Project Structure
 
-Automation & Scheduling: Apache Airflow
+sentiment-analyzer/
+│
+├── backend/
+│ ├── data_producer.py # Generates fake posts and pushes to Kafka
+│ ├── data_consumer.py # Consumes posts and analyzes sentiment using BERT
+│
+├── database/
+│ ├── daily_report.py # Creates daily reports from MongoDB data
+│
+├── airflow_dag/
+│ ├── trend_report_dag.py # Airflow DAG for daily trend reporting
+│
+├── frontend/
+│ ├── dashboard.py # Streamlit app for live visualization
+│
+└── README.md
 
-Libraries: transformers, pandas, textblob, faker, sklearn
 
-🚀 How It Works
+---
 
-Faker generates a continuous stream of posts with random users, topics, and text.
+## 🧠 How It Works
 
-The Kafka Producer sends these posts into a topic.
+1. **Fake Post Generation:** Faker library simulates social media posts in real time.  
+2. **Kafka Streaming:** Posts are streamed through Apache Kafka.  
+3. **Sentiment Analysis:** Each post is analyzed using a BERT model.  
+4. **Storage:** Results are stored in MongoDB.  
+5. **Visualization:** Streamlit dashboard displays real-time trends.  
+6. **Automation:** Airflow DAG generates daily sentiment trend reports.
 
-The Kafka Consumer reads each post, performs:
+---
 
-Sentiment analysis using the BERT model
+## 🖥️ Run Locally
 
-Topic extraction
+```bash
+# 1️⃣ Clone this repository
+git clone https://github.com/<your-username>/sentiment-analyzer.git
+cd sentiment-analyzer
 
-Then stores the processed results in MongoDB
+# 2️⃣ Set up virtual environment
+python -m venv venv
+venv\Scripts\activate  # (Windows)
+source venv/bin/activate  # (Linux/Mac)
 
-The Streamlit Dashboard shows live visual updates of sentiment and trending topics.
+# 3️⃣ Install dependencies
+pip install -r requirements.txt
+python -m textblob.download_corpora
 
-Each night, Apache Airflow runs a scheduled DAG that:
+# 4️⃣ Start Kafka, MongoDB, and run producer & consumer
+python backend/data_producer.py
+python backend/data_consumer.py
 
-Summarizes all posts from the previous day
+# 5️⃣ View dashboard
+streamlit run dashboard/dashboard.py
 
-Calculates sentiment distribution and top trending topics
-
-Inserts the report into a daily_reports MongoDB collection.
