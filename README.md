@@ -30,28 +30,6 @@ The project integrates **Kafka**, **BERT-based NLP**, **MongoDB**, **Streamlit**
 
 ---
 
-## ⚙️ Project Structure
-
-sentiment-analyzer/
-│
-├── backend/
-│ ├── data_producer.py # Generates fake posts and pushes to Kafka
-│ ├── data_consumer.py # Consumes posts and analyzes sentiment using BERT
-│
-├── database/
-│ ├── daily_report.py # Creates daily reports from MongoDB data
-│
-├── airflow_dag/
-│ ├── trend_report_dag.py # Airflow DAG for daily trend reporting
-│
-├── frontend/
-│ ├── dashboard.py # Streamlit app for live visualization
-│
-└── README.md
-
-
----
-
 ## 🧠 How It Works
 
 1. **Fake Post Generation:** Faker library simulates social media posts in real time.  
