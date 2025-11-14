@@ -5,11 +5,11 @@ from datetime import datetime, timedelta, timezone
 # -------------------------------
 # Connect to MongoDB
 # -------------------------------
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb+srv://Chhavi:Sharmacv%40123@sentimentanalyzer.elrkicj.mongodb.net/sentimentDB")
 db = client["sentimentDB"]
 
 raw_collection = db["social_media_posts"]
-report_collection = db["daily_reports"]   # Better name
+report_collection = db["tweets"]   # Better name
 
 # -------------------------------
 # Proper UTC alignment

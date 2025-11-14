@@ -18,7 +18,7 @@ st.title("📊 Real-Time Social Media Sentiment & Trend Dashboard")
 # -------------------------------
 # MongoDB Connection
 # -------------------------------
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient("mongodb+srv://Chhavi:Sharmacv%40123@sentimentanalyzer.elrkicj.mongodb.net/sentimentDB")
 db = client["sentimentDB"]
 posts_col = db["social_media_posts"]
 reports_col = db["tweets"]
