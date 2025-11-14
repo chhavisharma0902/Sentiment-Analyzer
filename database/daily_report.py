@@ -4,6 +4,8 @@ import logging
 from pymongo import MongoClient
 import pandas as pd
 from datetime import datetime, timedelta
+import streamlit as st
+
 
 # -------------------------------
 # Setup Logging  🔹 CHANGED
@@ -17,17 +19,17 @@ logging.basicConfig(
 # -------------------------------
 # MongoDB Connection  🔹 CHANGED
 # -------------------------------
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")  # default to localhost for host execution
+mongo_uri = st.secrets["MONGO_URI"]  # default to localhost for host execution
 DB_NAME = "sentimentDB"
 RAW_COLLECTION = "social_media_posts"
 REPORT_COLLECTION = "tweets"  
 
 try:
-    client = MongoClient(MONGO_URI)
+    client = MongoClient(mongo_uri)
     db = client[DB_NAME]
     raw_collection = db[RAW_COLLECTION]
     report_collection = db[REPORT_COLLECTION]
-    logging.info(f"✅ Connected to MongoDB at {MONGO_URI}")
+    logging.info(f"✅ Connected to MongoDB at {mongo_uri}")
 except Exception as e:
     logging.error(f"❌ Failed to connect to MongoDB: {e}")
     sys.exit(1)

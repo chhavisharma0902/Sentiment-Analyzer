@@ -4,19 +4,22 @@ from pymongo import MongoClient
 from datetime import datetime
 import sys
 import os
+import streamlit as st
+# -------------------------------
+# Connect to MongoDB
+# -------------------------------
+mongo_uri = st.secrets["MONGO_URI"]
 
 # -------------------------------
 # Connect to MongoDB
 # -------------------------------
-mongo_uri = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-mongo_client = MongoClient(mongo_uri)
-db = mongo_client["sentimentDB"]
+client = MongoClient(mongo_uri)
+db = client["sentimentDB"]
 collection = db["social_media_posts"]
-
 # -------------------------------
 # Connect to Kafka
 # -------------------------------
-kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9093').split(',')
+kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092').split(',')
 consumer = KafkaConsumer(
     'social_media_posts',
     bootstrap_servers=kafka_servers,

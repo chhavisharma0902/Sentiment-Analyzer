@@ -13,7 +13,7 @@ TOPICS = ["AI", "Cricket", "Movies", "Education", "Technology", "Politics", "Hea
 
 def create_producer():
     """Create and return a KafkaProducer"""
-    servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9093').split(',')
+    servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092').split(',')
     try:
         print(f"Connecting to Kafka at {servers}...")
         return KafkaProducer(

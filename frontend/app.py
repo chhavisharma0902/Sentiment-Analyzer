@@ -5,12 +5,17 @@ import plotly.express as px
 from datetime import datetime, timedelta
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
+import os
+load_dotenv()
+mongo_uri = os.getenv("MONGO_URI")
+
 
 # -------------------------------
 # MongoDB Connection
 # -------------------------------
-client = MongoClient("mongodb://localhost:27017/")
-db = client["sentimentDB"]
+mongo_uri = st.secrets["MONGO_URI"]
+db = mongo_uri["sentimentDB"]
 posts_col = db["social_media_posts"]
 reports_col = db["tweets"]
 
