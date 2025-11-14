@@ -1,11 +1,11 @@
-# 🌤️ Real-Time Sentiment Analyzer
+#  Real-Time Sentiment Analyzer
 
 A real-time sentiment analysis system that uses **Faker-generated social media posts** to simulate live data streams.  
 The project integrates **Kafka**, **BERT-based NLP**, **MongoDB**, **Streamlit**, and **Airflow** to provide insights, analytics, and automated daily reports.
 
 ---
 
-## 🚀 Features
+##  Features
 
 - 🔄 **Real-time data generation** using the Faker library  
 - 🧠 **Transformer-based sentiment analysis** (BERT model for Twitter data)  
@@ -16,7 +16,7 @@ The project integrates **Kafka**, **BERT-based NLP**, **MongoDB**, **Streamlit**
 
 ---
 
-## 🧩 Tech Stack
+##  Tech Stack
 
 | Component | Technology |
 |------------|-------------|
@@ -30,7 +30,7 @@ The project integrates **Kafka**, **BERT-based NLP**, **MongoDB**, **Streamlit**
 
 ---
 
-## 🧠 How It Works
+##  How It Works
 
 1. **Fake Post Generation:** Faker library simulates social media posts in real time.  
 2. **Kafka Streaming:** Posts are streamed through Apache Kafka.  
