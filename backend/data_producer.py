@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from faker import Faker
 import random
 import time
@@ -20,15 +21,18 @@ def generate_fake_tweets():
                 "username": fake.user_name(),
                 "content": fake.sentence(nb_words=10),
                 "topic": random.choice(topics),
-                "timestamp": str(fake.date_time_this_year())
+                "timestamp": datetime.utcnow().isoformat()  # FIXED
             }
+
             print("Producing:", post)
             producer.send("social_media_posts", post)
-            time.sleep(2)  # send one every 2 seconds
+            time.sleep(2)
+
     except KeyboardInterrupt:
         print("\n🛑 Producer stopped manually.")
-        producer.flush()  # ensure all pending messages are sent before exit
+        producer.flush()
         producer.close()
+
 
 if __name__ == "__main__":
     generate_fake_tweets()

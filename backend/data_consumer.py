@@ -25,43 +25,53 @@ consumer = KafkaConsumer(
 
 print("📡 Listening for new social media posts...")
 
-# -------------------------------
-# Sentiment analysis function
-# -------------------------------
+
 def get_sentiment(text):
     polarity = TextBlob(text).sentiment.polarity
     if polarity > 0.05:
         return "positive"
     elif polarity < -0.05:
         return "negative"
-    else:
-        return "neutral"
+    return "neutral"
 
-# -------------------------------
-# Consume messages and store in MongoDB
-# -------------------------------
+
+def normalize_topic(topic):
+    if not topic:
+        return "General"
+    
+    t = topic.replace(" ", "").replace("-", "").lower()
+    if t == "climatechange":
+        return "ClimateChange"
+    return topic
+
+
 try:
     for message in consumer:
         post = message.value
 
-        # --- Sentiment ---
-        sentiment = get_sentiment(post["content"])
-        post["sentiment"] = sentiment
+        # Sentiment
+        post["sentiment"] = get_sentiment(post["content"])
 
-        # --- Keep the topic from producer ---
-        # --- Keep the topic from producer ---
-        # Keep topic from producer but normalize
-        topic = post.get("topic", "General")
-        if topic.lower() == "climatechange":
-            topic = "ClimateChange"  # normalize to match chosen_topics
-        post["topic"] = topic
+        # Normalize topic
+        post["topic"] = normalize_topic(post.get("topic", "General"))
 
-        # --- Timestamp ---
-        post["timestamp"] = datetime.now()
+        # Handle timestamp
+        raw_ts = post.get("timestamp")
+        try:
+            post["timestamp"] = datetime.fromisoformat(raw_ts)
+        except Exception as e:
+            print("⚠️ Timestamp parse failed:", e, " | Using now().")
+            post["timestamp"] = datetime.now()
 
-        # --- Store to MongoDB ---
+        # Insert into DB
         collection.insert_one(post)
-        print(f"✅ Stored post by @{post['username']} | Sentiment: {sentiment} | Topic: {post['topic']} | Timestamp: {post['timestamp']}")
+
+        print(
+            f"✅ Stored post by @{post['username']} | "
+            f"Sentiment: {post['sentiment']} | "
+            f"Topic: {post['topic']} | "
+            f"Timestamp: {post['timestamp']}"
+        )
 
 except KeyboardInterrupt:
     print("🛑 Consumer stopped manually.")
