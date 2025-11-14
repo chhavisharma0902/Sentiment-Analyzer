@@ -1,5 +1,9 @@
 #  Real-Time Sentiment Analyzer
 
+🚀 **Live Dashboard:**  
+https://sentiment-analyzer-pqgemux9tdce7xbmv4ie4w.streamlit.app/
+
+
 A real-time sentiment analysis system that uses **Faker-generated social media posts** to simulate live data streams.  
 The project integrates **Kafka**, **BERT-based NLP**, **MongoDB**, **Streamlit**, and **Airflow** to provide insights, analytics, and automated daily reports.
 
