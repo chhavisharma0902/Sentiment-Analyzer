@@ -1,14 +1,12 @@
-# Core dependencies from original file
 faker
 kafka-python
 textblob
 pymongo
 streamlit
 plotly
-
-# Newly added libraries
 vaderSentiment
 scipy
 flask
 dash
 wordcloud
+apache-airflow

@@ -1,96 +1,103 @@
+import os
+import sys
+import logging
 from pymongo import MongoClient
 import pandas as pd
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 # -------------------------------
-# Connect to MongoDB
+# Setup Logging  🔹 CHANGED
 # -------------------------------
-client = MongoClient("mongodb+srv://Chhavi:Sharmacv%40123@sentimentanalyzer.elrkicj.mongodb.net/sentimentDB")
-db = client["sentimentDB"]
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
 
-raw_collection = db["social_media_posts"]
-report_collection = db["tweets"]   # Better name
+# -------------------------------
+# MongoDB Connection  🔹 CHANGED
+# -------------------------------
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")  # default to localhost for host execution
+DB_NAME = "sentimentDB"
+RAW_COLLECTION = "social_media_posts"
+REPORT_COLLECTION = "daily_reports"  # 🔹 CHANGED: clearer name than 'tweets'
+
+try:
+    client = MongoClient(MONGO_URI)
+    db = client[DB_NAME]
+    raw_collection = db[RAW_COLLECTION]
+    report_collection = db[REPORT_COLLECTION]
+    logging.info(f"✅ Connected to MongoDB at {MONGO_URI}")
+except Exception as e:
+    logging.error(f"❌ Failed to connect to MongoDB: {e}")
+    sys.exit(1)
 
 # -------------------------------
-# Proper UTC alignment
+# Define date range (last 24 hours)
 # -------------------------------
-now = datetime.now(timezone.utc)
+now = datetime.utcnow()  # 🔹 CHANGED: use UTC
 yesterday = now - timedelta(days=1)
+logging.info(f"📅 Generating report for range: {yesterday} → {now}")
 
 # -------------------------------
-# Fetch last 24 hours data (timestamps stored as datetime)
+# Fetch data
 # -------------------------------
-data = list(raw_collection.find({
-    "timestamp": {"$gte": yesterday}
-}))
+try:
+    data = list(raw_collection.find({"timestamp": {"$gte": yesterday}}))
+except Exception as e:
+    logging.error(f"❌ Error fetching data: {e}")
+    sys.exit(1)
 
 if len(data) == 0:
-    print("No posts found in last 24 hours.")
-    exit()
+    logging.warning("No posts found in the last 24 hours.")
+    sys.exit(0)
 
+# -------------------------------
+# Data processing
+# -------------------------------
 df = pd.DataFrame(data)
 
-# -------------------------------
-# Only chosen topics
-# -------------------------------
-chosen_topics = [
-    "AI", "Cricket", "Movies", "Education",
-    "Technology", "Politics", "Health", "ClimateChange"
-]
+# 🔹 CHANGED: Normalize timestamp strings if stored as str
+if df["timestamp"].dtype == "O":
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
 
+# 🔹 CHANGED: Filter by chosen topics
+chosen_topics = ["AI", "Cricket", "Movies", "Education",
+                 "Technology", "Politics", "Health", "ClimateChange"]
 df = df[df["topic"].isin(chosen_topics)]
 
-if len(df) == 0:
-    print("No posts for selected topics.")
-    exit()
+if df.empty:
+    logging.warning("No posts found for selected topics.")
+    sys.exit(0)
 
 # -------------------------------
-# Sentiment distribution
+# Compute Summary
 # -------------------------------
-sentiment_summary = (
-    df["sentiment"].value_counts().to_dict()
-)
+sentiment_summary = df["sentiment"].value_counts().to_dict()
+topic_summary = df["topic"].value_counts().reindex(chosen_topics, fill_value=0).head(5).to_dict()
 
-# -------------------------------
-# Top 5 topics (real ranking)
-# -------------------------------
-topic_summary = (
-    df["topic"]
-    .value_counts()
-    .sort_values(ascending=False)
-    .head(5)
-    .to_dict()
-)
-
-# -------------------------------
-# Final report
-# -------------------------------
 report = {
     "date": now.strftime("%Y-%m-%d"),
+    "generated_at": now.isoformat(),
     "total_posts": len(df),
     "sentiment_summary": sentiment_summary,
-    "top_topics": topic_summary,
-    "generated_at": now
+    "top_topics": topic_summary
 }
 
 # -------------------------------
-# Print report
+# Print and Save Report
 # -------------------------------
-print("\n📅 Daily Sentiment & Trend Report")
-print("--------------------------------")
-print(f"Date: {report['date']}")
-print(f"Total Posts: {report['total_posts']}")
-
-print("\nSentiment Distribution:")
+logging.info("📊 Daily Sentiment & Trend Report")
+logging.info("--------------------------------")
+logging.info(f"Total Posts: {report['total_posts']}")
 for s, c in sentiment_summary.items():
-    print(f"  {s}: {c}")
-
-print("\nTop 5 Topics:")
+    logging.info(f"  {s.capitalize()}: {c}")
+logging.info("\nTop Topics:")
 for t, c in topic_summary.items():
-    print(f"  {t}: {c}")
+    logging.info(f"  {t}: {c}")
 
-# -------------------------------
-# Save report
-# -------------------------------
-report_collection.insert_one(report)
-print("\n✅ Saved daily report to MongoDB (collection: daily_reports).")
+try:
+    report_collection.insert_one(report)
+    logging.info("✅ Report saved to MongoDB collection 'daily_reports'.")
+except Exception as e:
+    logging.error(f"❌ Failed to insert report: {e}")

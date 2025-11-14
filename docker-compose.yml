@@ -1,4 +1,9 @@
+version: '3.8' 
+
 services:
+  # --------------------------------------
+  # 🦓 Zookeeper
+  # --------------------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -8,6 +13,9 @@ services:
     ports:
       - "2181:2181"
 
+  # --------------------------------------
+  # 🦜 Kafka Broker
+  # --------------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
@@ -15,13 +23,19 @@ services:
       - zookeeper
     ports:
       - "9092:9092"
+      - "9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:9092,PLAINTEXT_EXTERNAL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:9092,PLAINTEXT_EXTERNAL://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+  # --------------------------------------
+  # 🍃 MongoDB
+  # --------------------------------------
   mongodb:
     image: mongo:6.0
     container_name: mongodb
@@ -31,5 +45,103 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  # --------------------------------------
+  # 🐘 PostgreSQL (Airflow Metadata DB)
+  # --------------------------------------
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # ✅ Added port for optional external connection
+
+  # --------------------------------------
+  # 🪶 Airflow Initialization
+  # --------------------------------------
+  airflow-init:
+    image: apache/airflow:2.8.1
+    container_name: airflow-init
+    depends_on:
+      - postgres
+    entrypoint: bash -c "pip install -r /opt/airflow/repo/requirements-docker.txt && airflow db init && airflow users create \
+      --username admin \
+      --firstname Admin \
+      --lastname User \
+      --role Admin \
+      --email admin@example.com \
+      --password admin"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: UTC
+      SENTIMENT_REPO: /opt/airflow/repo
+      KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092'
+      MONGO_URI: 'mongodb://mongodb:27017/'
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./:/opt/airflow/repo
+
+  # --------------------------------------
+  # 🌐 Airflow Webserver
+  # --------------------------------------
+  webserver:
+    image: apache/airflow:2.8.1
+    container_name: airflow-webserver
+    restart: always
+    depends_on:
+      - airflow-init
+      - scheduler
+    ports:
+      - "8081:8080"
+    command: bash -c "pip install -r /opt/airflow/repo/requirements-docker.txt && exec airflow webserver"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      SENTIMENT_REPO: /opt/airflow/repo
+      KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092'
+      MONGO_URI: 'mongodb://mongodb:27017/'
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./:/opt/airflow/repo
+
+  # --------------------------------------
+  # ⏱️ Airflow Scheduler
+  # --------------------------------------
+  scheduler:
+    image: apache/airflow:2.8.1
+    container_name: airflow-scheduler
+    restart: always
+    depends_on:
+      - airflow-init
+    command: bash -c "pip install -r /opt/airflow/repo/requirements-docker.txt && exec airflow scheduler"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      SENTIMENT_REPO: /opt/airflow/repo
+      KAFKA_BOOTSTRAP_SERVERS: 'kafka:9092'
+      MONGO_URI: 'mongodb://mongodb:27017/'
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./:/opt/airflow/repo
+
+# --------------------------------------
+# 📦 Volumes
+# --------------------------------------
 volumes:
   mongo-data:
+  postgres-db-volume:

@@ -7,160 +7,107 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 
 # -------------------------------
-# Page Config
-# -------------------------------
-st.set_page_config(
-    page_title="Social Media Sentiment Dashboard",
-    layout="wide"
-)
-st.title("📊 Real-Time Social Media Sentiment & Trend Dashboard")
-
-# -------------------------------
 # MongoDB Connection
 # -------------------------------
-client = MongoClient("mongodb+srv://Chhavi:Sharmacv%40123@sentimentanalyzer.elrkicj.mongodb.net/sentimentDB")
+client = MongoClient("mongodb://localhost:27017/")
 db = client["sentimentDB"]
 posts_col = db["social_media_posts"]
 reports_col = db["tweets"]
 
 # -------------------------------
-# Sidebar Filters
+# Streamlit Page Config
 # -------------------------------
-st.sidebar.header("🔍 Filters")
+st.set_page_config(page_title="Social Media Sentiment Dashboard", layout="wide")
+st.title("📊 Real-Time Social Media Sentiment & Trend Dashboard")
 
-time_options = {
-    "Last 1 Hour": 1,
-    "Last 6 Hours": 6,
-    "Last 12 Hours": 12,
-    "Last 24 Hours": 24
-}
-
-time_window = st.sidebar.selectbox("Select Time Range", list(time_options.keys()))
-time_delta = timedelta(hours=time_options[time_window])
+# Sidebar filters
+st.sidebar.header("🔍 Filter Options")
+time_window = st.sidebar.selectbox(
+    "Select Time Range",
+    ["Last 1 Hour", "Last 6 Hours", "Last 12 Hours", "Last 24 Hours"],
+    index=3
+)
+hours_map = {"Last 1 Hour":1, "Last 6 Hours":6, "Last 12 Hours":12, "Last 24 Hours":24}
+time_delta = timedelta(hours=hours_map[time_window])
 
 # -------------------------------
-# Fetch Data
+# Fetch Data from MongoDB
 # -------------------------------
-start_time = datetime.now() - time_delta
-posts = list(posts_col.find({"timestamp": {"$gte": start_time}}))
+now = datetime.now()
+start_time = now - time_delta
+data = list(posts_col.find({"timestamp": {"$gte": start_time}}))
 
-if not posts:
+if not data:
     st.warning("No posts found in the selected time range.")
-    st.stop()
+else:
+    df = pd.DataFrame(data)
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-df = pd.DataFrame(posts)
-df["timestamp"] = pd.to_datetime(df["timestamp"])
+    # -------------------------------
+    # Sentiment Distribution
+    # -------------------------------
+    st.subheader("💬 Sentiment Distribution")
+    sentiment_counts = df['sentiment'].value_counts().reset_index()
+    sentiment_counts.columns = ['Sentiment', 'Count']
+    col1, col2 = st.columns(2)
+    with col1:
+        fig1 = px.pie(sentiment_counts, names='Sentiment', values='Count',
+                      color='Sentiment',
+                      color_discrete_map={'positive':'green','negative':'red','neutral':'gray'},
+                      title="Sentiment Proportion")
+        st.plotly_chart(fig1, use_container_width=True)
+    with col2:
+        fig2 = px.bar(sentiment_counts, x='Sentiment', y='Count', color='Sentiment',
+                      title="Sentiment Count", text='Count',
+                      color_discrete_map={'positive':'green','negative':'red','neutral':'gray'})
+        st.plotly_chart(fig2, use_container_width=True)
 
-# -------------------------------
-# SECTION 1: Sentiment Overview
-# -------------------------------
-st.subheader("📉 Sentiment Distribution")
+    # -------------------------------
+    # Topic Trends
+    # -------------------------------
+    st.subheader("🔥 Top Trending Topics")
+    topic_counts = df['topic'].value_counts().reset_index()
+    topic_counts.columns = ['Topic', 'Count']
+    fig3 = px.bar(topic_counts.head(10), x='Topic', y='Count', color='Topic', title="Top 10 Topics")
+    st.plotly_chart(fig3, use_container_width=True)
 
-sent_counts = df["sentiment"].value_counts().reset_index()
-sent_counts.columns = ["Sentiment", "Count"]
+    # -------------------------------
+    # Time Series (Volume over time)
+    # -------------------------------
+    st.subheader("⏱️ Posts Over Time")
+    df['time_slot'] = df['timestamp'].dt.floor('H')
+    time_trend = df.groupby(['time_slot','sentiment']).size().reset_index(name='count')
+    fig4 = px.line(time_trend, x='time_slot', y='count', color='sentiment',
+                   title="Posts Over Time by Sentiment")
+    st.plotly_chart(fig4, use_container_width=True)
 
-col1, col2 = st.columns(2)
-
-with col1:
-    fig1 = px.pie(
-        sent_counts,
-        names="Sentiment",
-        values="Count",
-        title="Sentiment Proportion",
-        color="Sentiment",
-        color_discrete_map={
-            "positive": "lightgreen",
-            "negative": "red",
-            "neutral": "yellow"
-        }
-    )
-    st.plotly_chart(fig1, use_container_width=True)
-
-with col2:
-    fig2 = px.bar(
-        sent_counts,
-        x="Sentiment",
-        y="Count",
-        text="Count",
-        title="Sentiment Count",
-        color="Sentiment",
-        color_discrete_map={
-            "positive": "lightgreen",
-            "negative": "red",
-            "neutral": "yellow"
-        }
-    )
-    st.plotly_chart(fig2, use_container_width=True)
-
-# -------------------------------
-# SECTION 2: Topic Trends
-# -------------------------------
-st.subheader("🔥 Top Trending Topics")
-
-topic_counts = df["topic"].value_counts().reset_index()
-topic_counts.columns = ["Topic", "Count"]
-
-fig3 = px.bar(
-    topic_counts.head(10),
-    x="Topic",
-    y="Count",
-    title="Top 10 Trending Topics",
-    color="Topic"
-)
-st.plotly_chart(fig3, use_container_width=True)
+    # -------------------------------
+    # Word Cloud (optional)
+    # -------------------------------
+    st.subheader("☁️ Word Cloud (Post Content)")
+    text_data = " ".join(df["content"].astype(str))
+    if text_data.strip():
+        wc = WordCloud(width=800, height=400, background_color="white").generate(text_data)
+        fig, ax = plt.subplots(figsize=(10,5))
+        ax.imshow(wc, interpolation="bilinear")
+        ax.axis("off")
+        st.pyplot(fig)
 
 # -------------------------------
-# SECTION 3: Time Series Trends
-# -------------------------------
-st.subheader("⏱️ Posts Over Time (Hourly Breakdown)")
-
-df["time_slot"] = df["timestamp"].dt.floor("H")
-time_trend = df.groupby(["time_slot", "sentiment"]).size().reset_index(name="count")
-
-fig4 = px.line(
-    time_trend,
-    x="time_slot",
-    y="count",
-    color="sentiment",
-    title="Posts Over Time (Sentiment-wise)"
-)
-st.plotly_chart(fig4, use_container_width=True)
-
-# -------------------------------
-# SECTION 4: Word Cloud
-# -------------------------------
-st.subheader("☁️ Word Cloud (Post Content)")
-
-content_text = " ".join(df["content"].astype(str))
-
-if content_text.strip():
-    wc = WordCloud(
-        width=900,
-        height=400,
-        background_color="white"
-    ).generate(content_text)
-
-    fig, ax = plt.subplots(figsize=(12, 5))
-    ax.imshow(wc, interpolation="bilinear")
-    ax.axis("off")
-    st.pyplot(fig)
-
-# -------------------------------
-# SECTION 5: Daily Summary
+# Daily Summary Section
 # -------------------------------
 st.markdown("---")
-st.header("🗂️ Daily Summary Reports")
+st.header("📅 Daily Summary Report")
 
-summaries = list(reports_col.find().sort("date", -1).limit(5))
-
-if summaries:
-    for rpt in summaries:
-        st.subheader(f"📅 Date: {rpt['date']}")
-        st.write(f"**Total Posts:** {rpt['total_posts']}")
+daily_reports = list(reports_col.find().sort("date", -1).limit(5))
+if daily_reports:
+    for report in daily_reports:
+        st.markdown(f"### Date: {report['date']}")
+        st.write(f"**Total Posts:** {report['total_posts']}")
         st.write("**Sentiment Summary:**")
-        st.json(rpt["sentiment_summary"])
+        st.json(report['sentiment_summary'])
         st.write("**Top Topics:**")
-        st.json(rpt["top_topics"])
+        st.json(report['top_topics'])
         st.markdown("---")
 else:
-    st.info("No daily reports found yet.")
+    st.info("No daily reports found in the database yet.")
