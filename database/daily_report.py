@@ -20,7 +20,7 @@ logging.basicConfig(
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")  # default to localhost for host execution
 DB_NAME = "sentimentDB"
 RAW_COLLECTION = "social_media_posts"
-REPORT_COLLECTION = "daily_reports"  # 🔹 CHANGED: clearer name than 'tweets'
+REPORT_COLLECTION = "tweets"  
 
 try:
     client = MongoClient(MONGO_URI)
