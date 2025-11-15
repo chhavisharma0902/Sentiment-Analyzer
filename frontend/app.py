@@ -15,7 +15,8 @@ mongo_uri = os.getenv("MONGO_URI")
 # MongoDB Connection
 # -------------------------------
 mongo_uri = st.secrets["MONGO_URI"]
-db = mongo_uri["sentimentDB"]
+client = MongoClient(mongo_uri)
+db = client["sentimentDB"]
 posts_col = db["social_media_posts"]
 reports_col = db["tweets"]
 
