@@ -59,13 +59,13 @@ else:
     with col1:
         fig1 = px.pie(sentiment_counts, names='Sentiment', values='Count',
                       color='Sentiment',
-                      color_discrete_map={'positive':'green','negative':'red','neutral':'gray'},
+                      color_discrete_map={'positive':'lightgreen','negative':'red','neutral':'yellow'},
                       title="Sentiment Proportion")
         st.plotly_chart(fig1, use_container_width=True)
     with col2:
         fig2 = px.bar(sentiment_counts, x='Sentiment', y='Count', color='Sentiment',
                       title="Sentiment Count", text='Count',
-                      color_discrete_map={'positive':'green','negative':'red','neutral':'gray'})
+                      color_discrete_map={'positive':'lightgreen','negative':'red','neutral':'yellow'})
         st.plotly_chart(fig2, use_container_width=True)
 
     # -------------------------------
