@@ -18,5 +18,5 @@ env/
 
 .env
 .secrets.toml
-.streamlit/secrets.toml
+backend/.streamlit/secrets.toml
 
