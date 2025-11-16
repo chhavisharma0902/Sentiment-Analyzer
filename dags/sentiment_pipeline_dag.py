@@ -1,10 +1,6 @@
 from airflow import DAG
-try:
-    from airflow.providers.standard.operators.bash import BashOperator
-    from airflow.providers.standard.operators.python import PythonOperator
-except Exception:
-    from airflow.operators.bash import BashOperator
-    from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.bash import BashOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timedelta
 import os
 
