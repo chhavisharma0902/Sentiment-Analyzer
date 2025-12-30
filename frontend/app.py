@@ -80,12 +80,16 @@ else:
     # -------------------------------
     # Time Series (Volume over time)
     # -------------------------------
+    # st.write(df[['timestamp', 'sentiment']].head(10))
+    # st.write(df['timestamp'].dtype)
     st.subheader("⏱️ Posts Over Time")
-    df['time_slot'] = df['timestamp'].dt.floor('H')
+    df['time_slot'] = df['timestamp'].dt.floor('5min')
     time_trend = df.groupby(['time_slot','sentiment']).size().reset_index(name='count')
     fig4 = px.line(time_trend, x='time_slot', y='count', color='sentiment',
                    title="Posts Over Time by Sentiment")
     st.plotly_chart(fig4, use_container_width=True)
+    # st.write(df['time_slot'].value_counts())
+
 
     # -------------------------------
     # Word Cloud (optional)

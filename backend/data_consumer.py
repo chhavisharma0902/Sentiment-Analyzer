@@ -19,7 +19,7 @@ collection = db["social_media_posts"]
 # -------------------------------
 # Connect to Kafka
 # -------------------------------
-kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092').split(',')
+kafka_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9093').split(',')
 consumer = KafkaConsumer(
     'social_media_posts',
     bootstrap_servers=kafka_servers,
