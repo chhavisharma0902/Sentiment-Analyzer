@@ -19,4 +19,5 @@ env/
 .env
 .secrets.toml
 backend/.streamlit/secrets.toml
-
+database/.streamlit/secrets.toml
+frontend/.streamlit/secrets.toml
